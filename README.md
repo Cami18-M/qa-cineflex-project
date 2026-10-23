@@ -9,9 +9,9 @@
 
 ## 📹 Video de sustentación
 
-> **Enlace del video (máx. 3 minutos):** [PENDIENTE — agregar aquí el enlace público de YouTube/Vimeo/Drive]
+> **Enlace del video (máx. 3 minutos):**
 
-Guion resumido en la sección [Video de sustentación](#video-de-sustentación).
+( https://drive.google.com/file/d/1zoNQdzAXQWdy6hayUq2uRU2F3L1hDkT0/view?usp=sharing ).
 
 ---
 
@@ -81,9 +81,6 @@ qa-cineflex-project/
 │       └── ReservaPage.js
 ├── performance/
 │   └── prueba_carga.jmx
-├── scripts/
-│   ├── package.json
-│   └── generate_pdf.js    (genera estrategia_pruebas.pdf)
 └── .github/
     └── workflows/
         └── qa-pipeline.yml
@@ -192,7 +189,7 @@ Abrir en el navegador `http://localhost:8081`.
 4. Asegúrate de que el backend esté corriendo en el puerto 3000.
 5. Ejecuta la colección completa con **Run** (o carpeta por carpeta).
 
-La colección incluye: login (200/400/401/429 + captura dinámica del JWT),
+La colección incluye: login (200/400/401/429 sin captura dinámica del JWT),
 cartelera (con/sin token, SLA < 300 ms) y reserva (rechazada, inválida, asiento
 ocupado, error de servicio, respuesta inválida, compra exitosa y consulta).
 
@@ -316,13 +313,5 @@ summary = 501 in 00:00:17 = 29.9/s Avg: 4  Min: 2  Max: 95  Err: 0 (0.00%)
 
 ## 18. Enlace al repositorio
 
-> **[PENDIENTE — agregar URL del repositorio público de GitHub]**
+> **https://github.com/Cami18-M/qa-cineflex-project.git**
 
-## 19. Video de sustentación (guion ≤ 3 minutos)
-
-| Tiempo | Integrante | Contenido |
-|---|---|---|
-| 0:00–0:45 | Integrante 4 | Arquitectura de CineFlex y estrategia de pruebas (Fase A). |
-| 0:45–1:30 | Integrante 1 | Backend y endpoints: login/JWT, cartelera, asientos, reservas y stub de pagos. |
-| 1:30–2:15 | Integrante 2 | Frontend y patrón POM: clases Page + suite de 18 casos ejecutándose en vivo. |
-| 2:15–3:00 | Integrante 3 | Ejecución de Newman y JMeter, resultados y cierre. |
