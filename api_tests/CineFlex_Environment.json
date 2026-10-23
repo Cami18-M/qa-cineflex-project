@@ -1,0 +1,44 @@
+{
+  "id": "cineflex-env",
+  "name": "CineFlex Environment",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "enabled": true
+    },
+    {
+      "key": "email",
+      "value": "cliente@cineflex.com",
+      "enabled": true
+    },
+    {
+      "key": "password",
+      "value": "CineFlex123",
+      "enabled": true
+    },
+    {
+      "key": "token",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "peliculaId",
+      "value": "1",
+      "enabled": true
+    },
+    {
+      "key": "asientoLibre",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "reservaId",
+      "value": "",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment",
+  "_postman_exported_at": "2026-10-20T00:00:00.000Z",
+  "_postman_exported_using": "Postman"
+}

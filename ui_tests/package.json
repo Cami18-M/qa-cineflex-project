@@ -1,0 +1,20 @@
+{
+  "name": "cineflex-ui-tests",
+  "version": "1.0.0",
+  "description": "Suite de pruebas UI de CineFlex con Selenium WebDriver y patron Page Object Model (POM)",
+  "main": "test_suite.js",
+  "scripts": {
+    "test": "node test_suite.js"
+  },
+  "keywords": [
+    "selenium",
+    "webdriver",
+    "pom",
+    "cineflex",
+    "qa"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "selenium-webdriver": "^4.26.0"
+  }
+}

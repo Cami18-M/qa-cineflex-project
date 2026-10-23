@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CineFlex — Venta de boletos de cine</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Barra superior -->
+    <header class="topbar" id="topbar">
+        <div class="topbar-inner">
+            <div class="brand">
+                <span class="brand-logo">🎬</span>
+                <span class="brand-name">CineFlex</span>
+            </div>
+            <div class="topbar-actions">
+                <span class="user-label" id="user-nombre"></span>
+                <button class="btn btn-ghost" id="btn-logout" type="button">Cerrar sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+
+        <!-- ===================== LOGIN ===================== -->
+        <section class="view" id="login-view">
+            <div class="card card-centered">
+                <h1 class="view-title" id="login-titulo">Iniciar sesión</h1>
+                <p class="muted">Ingresa con tus credenciales para ver la cartelera.</p>
+                <form id="login-form" autocomplete="off" novalidate>
+                    <label class="field">
+                        <span>Correo electrónico</span>
+                        <input type="email" id="email" name="email" placeholder="cliente@cineflex.com" required>
+                    </label>
+                    <label class="field">
+                        <span>Contraseña</span>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required>
+                    </label>
+                    <div class="alert alert-error hidden" id="login-error" role="alert"></div>
+                    <button class="btn btn-primary btn-block" id="btn-login" type="submit">
+                        <span id="login-label">Ingresar</span>
+                    </button>
+                </form>
+                <p class="hint">Usuario de prueba: <code>cliente@cineflex.com</code> / <code>CineFlex123</code></p>
+            </div>
+        </section>
+
+        <!-- ===================== CARTELERA ===================== -->
+        <section class="view hidden" id="cartelera-view">
+            <h1 class="view-title" id="cartelera-titulo">Cartelera</h1>
+            <p class="muted" id="cartelera-subtitulo">Selecciona una película para comprar tus boletos.</p>
+            <div class="alert alert-error hidden" id="cartelera-error" role="alert"></div>
+            <div class="grid" id="cartelera-lista"></div>
+        </section>
+
+        <!-- ===================== ASIENTOS ===================== -->
+        <section class="view hidden" id="asientos-view">
+            <div class="asientos-header">
+                <button class="btn btn-ghost" id="btn-volver-cartelera" type="button">← Volver</button>
+                <h1 class="view-title" id="asientos-titulo">Selecciona tus asientos</h1>
+            </div>
+            <p class="muted">Película: <strong id="asientos-pelicula"></strong> — <span id="asientos-sala"></span></p>
+
+            <div class="pantalla">PANTALLA</div>
+
+            <div class="asientos-grid" id="asientos-container"></div>
+
+            <div class="leyenda">
+                <span><i class="seat-dot libre"></i> Libre</span>
+                <span><i class="seat-dot ocupado"></i> Ocupado</span>
+                <span><i class="seat-dot seleccionado"></i> Seleccionado</span>
+            </div>
+
+            <div class="alert alert-error hidden" id="asientos-error" role="alert"></div>
+
+            <div class="resumen" id="asientos-resumen">
+                <span>Asientos seleccionados: <strong id="asientos-seleccionados">Ninguno</strong></span>
+                <span>Total: <strong id="asientos-total">$0</strong></span>
+            </div>
+
+            <button class="btn btn-primary btn-block" id="btn-continuar-pago" type="button">Continuar al pago</button>
+        </section>
+
+        <!-- ===================== PAGO ===================== -->
+        <section class="view hidden" id="pago-view">
+            <div class="asientos-header">
+                <button class="btn btn-ghost" id="btn-volver-asientos" type="button">← Volver</button>
+                <h1 class="view-title" id="pago-titulo">Pago simulado</h1>
+            </div>
+            <p class="muted" id="pago-resumen"></p>
+            <form id="pago-form" autocomplete="off" novalidate>
+                <label class="field">
+                    <span>Número de tarjeta</span>
+                    <input type="text" id="card-numero" name="card-numero" placeholder="4242 4242 4242 4242" inputmode="numeric" maxlength="19" required>
+                </label>
+                <label class="field">
+                    <span>Titular de la tarjeta</span>
+                    <input type="text" id="card-titular" name="card-titular" placeholder="Cliente CineFlex" required>
+                </label>
+                <div class="field-row">
+                    <label class="field">
+                        <span>Expiración (MM/YY)</span>
+                        <input type="text" id="card-expiracion" name="card-expiracion" placeholder="12/27" maxlength="5" required>
+                    </label>
+                    <label class="field">
+                        <span>CVV</span>
+                        <input type="text" id="card-cvv" name="card-cvv" placeholder="123" inputmode="numeric" maxlength="4" required>
+                    </label>
+                </div>
+                <div class="alert alert-error hidden" id="pago-error" role="alert"></div>
+                <button class="btn btn-primary btn-block" id="btn-pagar" type="submit">Pagar ahora</button>
+            </form>
+            <p class="hint">Pago simulado. Tarjeta de prueba aprobada: <code>4242 4242 4242 4242</code>. Rechazada: <code>4000 0000 0000 0002</code>.</p>
+        </section>
+
+        <!-- ===================== TICKET ===================== -->
+        <section class="view hidden" id="ticket-view">
+            <h1 class="view-title" id="ticket-titulo">¡Compra confirmada!</h1>
+            <div class="ticket" id="ticket">
+                <div class="ticket-head">
+                    <span class="brand-logo">🎬</span>
+                    <span class="brand-name">CineFlex</span>
+                </div>
+                <div class="ticket-body">
+                    <div class="ticket-row"><span>Película</span><strong id="ticket-pelicula"></strong></div>
+                    <div class="ticket-row"><span>Sala</span><strong id="ticket-sala"></strong></div>
+                    <div class="ticket-row"><span>Asientos</span><strong id="ticket-asientos"></strong></div>
+                    <div class="ticket-row"><span>Total</span><strong id="ticket-total"></strong></div>
+                    <div class="ticket-row"><span>Fecha</span><strong id="ticket-fecha"></strong></div>
+                </div>
+                <div class="ticket-code">
+                    <span>Código de ticket</span>
+                    <strong id="ticket-codigo"></strong>
+                </div>
+            </div>
+            <button class="btn btn-primary btn-block" id="btn-nueva-compra" type="button">Comprar otro boleto</button>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

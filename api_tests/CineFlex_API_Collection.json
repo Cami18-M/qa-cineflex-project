@@ -1,0 +1,651 @@
+{
+  "info": {
+    "name": "CineFlex API Collection",
+    "description": "Coleccion de pruebas de API para la plataforma CineFlex (taller QA en produccion).\n\nRequisitos:\n- Backend corriendo en {{baseUrl}} (por defecto http://localhost:3000/api).\n- Ejecutar la carpeta completa en orden para que el login capture el token.\n- Se puede ejecutar con Newman: newman run CineFlex_API_Collection.json -e CineFlex_Environment.json",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "1. Login",
+      "item": [
+        {
+          "name": "Login valido (captura JWT)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta con token JWT', function () { const t = pm.response.json().token; pm.expect(t).to.be.a('string').and.not.empty; pm.environment.set('token', t); });",
+                  "pm.test('Respuesta con datos de usuario', function () { const u = pm.response.json().user; pm.expect(u).to.have.property('email').that.equals(pm.environment.get('email')); pm.expect(u).to.have.property('nombre').to.be.a('string'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login credenciales invalidas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Mensaje de error correcto', function () { pm.expect(pm.response.json().error).to.include('Credenciales'); });",
+                  "pm.test('No se emite token', function () { pm.expect(pm.response.json()).to.not.have.property('token'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"incorrecta\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login campos vacios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Mensaje de validacion', function () { pm.expect(pm.response.json().error).to.include('obligatorios'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"\",\n  \"password\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bloqueo preventivo (3 intentos fallidos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const baseUrl = pm.environment.get('baseUrl');",
+                  "const email = 'bloqueo' + Date.now() + '@cineflex.com';",
+                  "function attempt(pass, cb) { pm.sendRequest({ url: baseUrl + '/auth/login', method: 'POST', header: { 'Content-Type': 'application/json' }, body: { mode: 'raw', raw: JSON.stringify({ email: email, password: pass }) } }, function (err, res) { cb(res); }); }",
+                  "attempt('mal1', function (r1) { attempt('mal2', function (r2) { attempt('mal3', function (r3) { attempt('mal4', function (r4) {",
+                  "  pm.test('Intento 1 -> 401', function () { pm.expect(r1.code).to.eql(401); });",
+                  "  pm.test('Intento 2 -> 401', function () { pm.expect(r2.code).to.eql(401); });",
+                  "  pm.test('Intento 3 -> 429 (bloqueo)', function () { pm.expect(r3.code).to.eql(429); });",
+                  "  pm.test('Intento 4 -> 429 (sigue bloqueado)', function () { pm.expect(r4.code).to.eql(429); });",
+                  "  pm.test('Mensaje de bloqueo correcto', function () { pm.expect(r3.json().error).to.include('bloqueada'); });",
+                  "  pm.test('Indica reintentarEnSegundos', function () { pm.expect(r3.json().reintentarEnSegundos).to.be.a('number').and.above(0); });",
+                  "}); }); }); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"bloqueo@cineflex.com\",\n  \"password\": \"cualquiera\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Cartelera",
+      "item": [
+        {
+          "name": "Cartelera valida (con token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Respuesta es JSON valido', function () { const data = pm.response.json(); pm.expect(data).to.have.property('peliculas'); });",
+                  "pm.test('Lista de peliculas no vacia', function () { pm.expect(pm.response.json().peliculas).to.be.an('array').that.is.not.empty; });",
+                  "pm.test('Cada pelicula tiene estructura correcta', function () { pm.response.json().peliculas.forEach(function (p) { pm.expect(p).to.have.property('titulo'); pm.expect(p).to.have.property('genero'); pm.expect(p).to.have.property('precio'); }); });",
+                  "pm.test('Tiempo de respuesta < 300 ms', function () { pm.expect(pm.response.responseTime).to.be.below(300); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cartelera",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cartelera"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cartelera sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Mensaje de token requerido', function () { pm.expect(pm.response.json().error).to.include('Token de autenticacion'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/cartelera",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cartelera"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cartelera con token invalido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 401', function () { pm.response.to.have.status(401); });",
+                  "pm.test('Mensaje de token invalido', function () { pm.expect(pm.response.json().error).to.include('invalido'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer token_invalido_123"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/cartelera",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "cartelera"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Reserva",
+      "item": [
+        {
+          "name": "Reserva sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 401', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": 1,\n  \"asientos\": [\"E9\"],\n  \"tarjeta\": { \"numero\": \"4242424242424242\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva sin asientos seleccionados",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Mensaje de validacion', function () { pm.expect(pm.response.json().error).to.include('asiento'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": 1,\n  \"asientos\": [],\n  \"tarjeta\": { \"numero\": \"4242424242424242\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva con tarjeta invalida (formato)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 400', function () { pm.response.to.have.status(400); });",
+                  "pm.test('Mensaje de tarjeta invalida', function () { pm.expect(pm.response.json().error).to.include('tarjeta'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": 1,\n  \"asientos\": [\"E8\"],\n  \"tarjeta\": { \"numero\": \"1234\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva con tarjeta rechazada (0002)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 402 (tarjeta rechazada)', function () { pm.expect([400, 402]).to.include(pm.response.code); });",
+                  "pm.test('Mensaje de rechazo', function () { pm.expect(pm.response.json().error).to.include('rechazada'); });",
+                  "pm.test('No se emite ticket', function () { pm.expect(pm.response.json()).to.not.have.property('codigoTicket'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": 1,\n  \"asientos\": [\"E9\"],\n  \"tarjeta\": { \"numero\": \"4000000000000002\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva error del servicio de pagos (0000)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 503', function () { pm.response.to.have.status(503); });",
+                  "pm.test('Mensaje de pasarela no disponible', function () { pm.expect(pm.response.json().error).to.include('pasarela'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": 1,\n  \"asientos\": [\"E7\"],\n  \"tarjeta\": { \"numero\": \"4000000000000000\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva respuesta invalida de la pasarela (1234)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 502', function () { pm.response.to.have.status(502); });",
+                  "pm.test('Mensaje de respuesta invalida', function () { pm.expect(pm.response.json().error).to.include('invalida'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": 1,\n  \"asientos\": [\"E6\"],\n  \"tarjeta\": { \"numero\": \"4000000000001234\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva con asiento ocupado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 409 (asiento ocupado)', function () { pm.response.to.have.status(409); });",
+                  "pm.test('Mensaje de asiento ocupado', function () { pm.expect(pm.response.json().error).to.include('ocupado'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": 1,\n  \"asientos\": [\"A1\"],\n  \"tarjeta\": { \"numero\": \"4242424242424242\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva exitosa (compra)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const base = pm.environment.get('baseUrl');",
+                  "const token = pm.environment.get('token');",
+                  "pm.sendRequest({ url: base + '/peliculas/' + pm.environment.get('peliculaId') + '/asientos', method: 'GET', header: { 'Authorization': 'Bearer ' + token } }, function (err, res) { if (!err && res.code === 200) { const a = res.json().asientos || []; const libre = a.find(function (x) { return x.estado === 'libre'; }); if (libre) pm.environment.set('asientoLibre', libre.id); } });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 201', function () { pm.response.to.have.status(201); });",
+                  "pm.test('Reserva confirmada', function () { pm.expect(pm.response.json().estado).to.eql('CONFIRMADA'); });",
+                  "pm.test('Ticket con codigo valido', function () { pm.expect(pm.response.json().codigoTicket).to.match(/^CF-\\d{6}$/); });",
+                  "pm.test('Total mayor que cero', function () { pm.expect(pm.response.json().total).to.be.a('number').and.above(0); });",
+                  "pm.test('Transaccion aprobada', function () { pm.expect(pm.response.json().transaccion.estado).to.eql('APROBADO'); });",
+                  "pm.environment.set('reservaId', pm.response.json().reservaId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"peliculaId\": {{peliculaId}},\n  \"asientos\": [\"{{asientoLibre}}\"],\n  \"tarjeta\": { \"numero\": \"4242424242424242\", \"titular\": \"Cliente CineFlex\", \"expiracion\": \"12/27\", \"cvv\": \"123\" }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Consulta resultado de la reserva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Estado 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Coincide con la reserva creada', function () { pm.expect(pm.response.json().reservaId).to.eql(Number(pm.environment.get('reservaId'))); });",
+                  "pm.test('Estado CONFIRMADA', function () { pm.expect(pm.response.json().estado).to.eql('CONFIRMADA'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{reservaId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reservaId}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
